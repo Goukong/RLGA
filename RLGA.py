@@ -7,9 +7,15 @@ class RLGA:
 	def __init__(self,DNA_SIZE = 6,POP_SIZE = 100):
 		self.dna_size = DNA_SIZE
 		self.pop_size = POP_SIZE
-		self.max_found = 0
-		self.max_param = []
-		self.last_reward = 0
+		self.min_mse = 1e10
+		self.min_param = []
+		self.base = 0
+		#self.last_reward = 0
+
+	def changeTrainSet(self):
+		self.base += 10
+		self.min_mse = 1e10
+		self.min_param = []
 
 	def createQTable(self):
 		#First we devide the dna into 6 parts
@@ -44,7 +50,7 @@ class RLGA:
 		
 			#EPS [0,1]
 			dna_mod[i][5] = np.random.rand()
-	
+		self.pop = dna_mod
 		return dna_mod
 
 	def getfitness(self,child):
@@ -63,25 +69,39 @@ class RLGA:
 				int(child[4]),child[5])
 			)
 		#!!!!get MSE
-		result = TT.targetTrace(feature_params,lk_params) 
+		result = TT.targetTrace(feature_params,lk_params,self.base) 
 		return result
 
-	def readPastExperience():
+	def readPastExperience(self,agents):
+		self.pop = np.fromfile('pop.bin',dtype = np.float64)
+		self.pop = self.pop.reshape(self.pop_size,self.dna_size)
+		for i,agent in enumerate(agents):
+			agent.readPastInfor(i)
+			#if i == 0:
+				#print(agent.q_table)
 		'''
 			读取种群信息
 			读取Q表信息
 		'''
-		return
+	def writeCurrentInfor(self,agents):
+		self.pop.tofile("pop.bin")
+		for i,agent in enumerate(agents):
+			agent.writeInfor(i)
+			#if i == 0:
+				#print(agent.q_table)
+
 
 	#Simulate and update GA 
-	def RL(self,pop,agents):
+	def RL(self,agents):
 		#create mods to store dna and choosed pop
 		child = []
 		state = []
 		for i,agent in enumerate(agents):
 			idx = agent.choose_action()
 			state.append(idx)
-			parent = pop[idx]
+			#print(self.pop.shape)
+			idx = int(idx)
+			parent = self.pop[idx]
 			child.append(parent[i])
 
 		#get reward
@@ -89,11 +109,20 @@ class RLGA:
 			得到适应度，并且拿到最适合的参数
 			计算出奖励值
 		'''
-		fitness = self.getfitness(child)
-		if fitness > self.max_found:
-			self.max_found = fitness
-			self.max_param = child
-		reward = fitness - self.last_reward
+		mse = self.getfitness(child)
+		reward = 0
+		if self.min_mse == 1e10:
+			self.min_mse = mse
+			self.last_mse = mse
+			reward = 0
+		elif mse == 0:
+			reward = 0
+		else:
+			if mse < self.min_mse:
+				self.min_mse = mse 
+				self.min_param = child
+			reward = self.last_mse - mse
+			self.last_mse = mse
 
 		#train the q_table
 		for i,agent in enumerate(agents):

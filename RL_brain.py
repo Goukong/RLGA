@@ -41,17 +41,20 @@ class QLearningTable:
 		return action
 	
 	def learn(self,action,reward):
-		q_predict = self.q_table.loc[0,action]
+		try:
+			q_predict = self.q_table.loc[0,action]
+		except:
+			action = str(action)
+			q_predict = self.q_table.loc[0,action]
 		q_target = reward
 		self.q_table.loc[0,action] += self.lr * (q_target - q_predict)
 
 	#让之前的经验变得有用,如果要保存的话种群也要保存起来
-	def readPastInfor(self,location): 
-		test = pd.read_csv(location)
-		return test
-
-	def writeInfor(self):
-		self.q_table.to_csv('test.csv',sep=",",header=True,index=False)
-
-	def updateTable(self,test):
+	def readPastInfor(self,num):
+		name = 'agent' + str(num) + '.csv' 
+		test = pd.read_csv(name)
 		self.q_table = test
+
+	def writeInfor(self,num):
+		name = 'agent' + str(num) + '.csv'
+		self.q_table.to_csv(name,sep=",",header=True,index=False)

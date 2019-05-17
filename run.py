@@ -3,11 +3,17 @@ def main():
 	rlga = RLGA.RLGA()
 	agents = rlga.createQTable()
 	pop = rlga.createPopulation()
-	for _ in range(100):
-		agents = rlga.RL(pop,agents)
-		print('max_found:',rlga.max_found)
-		print('max_param:',rlga.max_param)
-
+	firstTime = False
+	if not firstTime:
+		rlga.readPastExperience(agents)
+		#print(rlga.pop)
+	for i in range(10):
+		for _ in range(100):
+			agents = rlga.RL(agents)
+		print('min_mse:',rlga.min_mse)
+		print('min_param:',rlga.min_param)
+		rlga.changeTrainSet()
+	rlga.writeCurrentInfor(agents)	
 
 
 if __name__ == '__main__':
