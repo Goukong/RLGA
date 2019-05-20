@@ -10,12 +10,16 @@ class RLGA:
 		self.min_mse = 1e10
 		self.min_param = []
 		self.base = 0
-		#self.last_reward = 0
+		self.max_found = -1
+		self.last_found = 0
+		self.max_reward = -9999
 
 	def changeTrainSet(self):
 		self.base += 10
 		self.min_mse = 1e10
+		self.max_found = -1
 		self.min_param = []
+		self.max_reward = -9999
 
 	def createQTable(self):
 		#First we devide the dna into 6 parts
@@ -69,8 +73,8 @@ class RLGA:
 				int(child[4]),child[5])
 			)
 		#!!!!get MSE
-		result = TT.targetTrace(feature_params,lk_params,self.base) 
-		return result
+		mse,found = TT.targetTrace(feature_params,lk_params,self.base) 
+		return mse,found
 
 	def readPastExperience(self,agents):
 		self.pop = np.fromfile('pop.bin',dtype = np.float64)
@@ -109,20 +113,59 @@ class RLGA:
 			得到适应度，并且拿到最适合的参数
 			计算出奖励值
 		'''
-		mse = self.getfitness(child)
+		mse,found = self.getfitness(child)
 		reward = 0
+
+		'''#mse_reward
+								if self.min_mse == 1e10:
+									self.min_mse = mse
+									self.last_mse = mse
+									mse_reward = 0
+								elif mse == 0:
+									mse_reward = 0
+								else:
+									if mse < self.min_mse:
+										self.min_mse = mse 
+										#self.min_param = child
+									mse_reward = self.last_mse - mse
+									self.last_mse = mse
+						
+								#point_found_reward
+								if self.max_found == -1:
+									self.max_found = found
+									self.last_found = found
+									found_reward = 0
+								elif mse == 0:
+									found_reward = 0
+								else:
+									if found > self.max_found:
+										self.max_found = found
+									found_reward = found - self.last_found
+									self.last_found = found'''
 		if self.min_mse == 1e10:
-			self.min_mse = mse
-			self.last_mse = mse
-			reward = 0
-		elif mse == 0:
-			reward = 0
+			self.min_mse = mse 
+			self.last_mse = mse 
+			mse_reward = 0
+		elif mse == 0 or mse == 1e9:
+			mse_reward = -10
 		else:
-			if mse < self.min_mse:
-				self.min_mse = mse 
-				self.min_param = child
-			reward = self.last_mse - mse
-			self.last_mse = mse
+			mse_reward = self.last_mse - mse 
+			self.last_mse = mse 
+
+		if self.max_found == -1:
+			self.max_found = found 
+			self.last_found = found
+			found_reward = found
+		else:
+			found_reward = found - self.last_found
+			self.last_found = found
+									
+		reward = mse_reward * 0.8 + found_reward * 1.2
+
+		if reward > self.max_reward:
+			self.max_reward = reward
+			self.min_param = child
+		print(reward)
 
 		#train the q_table
 		for i,agent in enumerate(agents):

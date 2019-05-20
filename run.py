@@ -10,8 +10,8 @@ def main():
 	for i in range(10):
 		for _ in range(100):
 			agents = rlga.RL(agents)
-		print('min_mse:',rlga.min_mse)
-		print('min_param:',rlga.min_param)
+		print('max_reward:',rlga.max_reward)
+		print('max_param:',rlga.min_param)
 		rlga.changeTrainSet()
 	rlga.writeCurrentInfor(agents)	
 

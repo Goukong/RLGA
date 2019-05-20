@@ -115,6 +115,6 @@ def targetTrace(feature_params,lk_params,base):
 			find_old,find_new = dropBad(find_old,find_new,xcenter_old,ycenter_old,radius)
 			
 		except:
-			return 1e9
+			return 1e9,0
 	
-	return mse
+	return mse,find_new.shape[0]
